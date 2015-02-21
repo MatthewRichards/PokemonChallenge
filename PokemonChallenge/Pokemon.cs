@@ -8,11 +8,24 @@ namespace PokemonChallenge
     public Pokemon(string name)
     {
       Name = name.ToLowerInvariant();
+      Length = name.Length;
+      LowestPossibleLength = name.Length;
       Pokecode = CalculatePokecode(Name);
       ShorterSubsets = new List<Pokemon>();
     }
 
     public string Name { get; private set; }
+
+    /// <summary>
+    /// This is the length of this Pokemon's name. Don't use this if you might later replace this 
+    /// Pokemon with one of its shorter subsets.
+    /// </summary>
+    public int Length { get; private set; }
+
+    /// <summary>
+    /// This is the shortest length of this Pokemon's name or the names of any of its shorter subsets.
+    /// </summary>
+    public int LowestPossibleLength { get; private set; }
 
     /// <summary>
     /// A Pokemon's Pokecode is a 21-bit number indicating the letters that the Pokemon's name contains. 'A' is least significant.
@@ -45,16 +58,11 @@ namespace PokemonChallenge
 
     public void AddShorterSubsetIfApplicable(Pokemon candidate)
     {
-      if (candidate.Pokecode == Pokecode)
-      {
-        if (string.CompareOrdinal(candidate.Name, Name) > 0)
-        {
-          ShorterSubsets.Add(candidate);
-        }
-      }
-      else if ((candidate.Pokecode | Pokecode) == Pokecode)
+      if ((candidate.Pokecode == Pokecode && string.CompareOrdinal(candidate.Name, Name) > 0)
+          || (candidate.Pokecode != Pokecode && (candidate.Pokecode | Pokecode) == Pokecode))
       {
         ShorterSubsets.Add(candidate);
+        LowestPossibleLength = Math.Min(LowestPossibleLength, candidate.LowestPossibleLength);
       }
     }
 

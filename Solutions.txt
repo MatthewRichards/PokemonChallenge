@@ -1,0 +1,3 @@
+{watchog, drifblim, vespiquen, jynx, zekrom}
+{watchog, drifblim, zekrom, jynx, vespiquen}
+{scatterbug, pidove, qwilfish, jynx, zekrom}
