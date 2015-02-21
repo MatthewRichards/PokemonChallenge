@@ -11,23 +11,25 @@ namespace PokemonChallenge
 {
   class Program
   {
+    private static readonly int TargetPokecode = (int)Math.Pow(2, 26) - 1;
+    private static DateTime startTime = DateTime.Now;
+
     static void Main()
     {
-      var pokedex = LoadPokedex();
-      var pokemonByLetter = Enumerable.Range(0, 25)
-        .Select(index => new Tuple<int, List<string>>(index, pokedex.Where(pokemon => pokemon.Contains((char)('a' + index))).ToList()))
-        .ToDictionary(tuple => tuple.Item1, pair => pair.Item2);
+      var pokedex = new Pokedex(@"..\..\..\Pokemon.txt");
 
-      for (int maxPokemon = 2;; maxPokemon++)
+      for (int maxPokemon = 2; maxPokemon <= 5; maxPokemon++)
       {
         int sizeLimit = maxPokemon;
-        var target = pokemonByLetter[0].Count;
+        var target = pokedex.GetPokemonByLetter(0).Count;
         var progress = 0;
 
-        Parallel.ForEach(pokemonByLetter[0], firstPokemon =>
+        Parallel.ForEach(pokedex.GetPokemonByLetter(0), firstPokemon =>
         {
-          FindCompleteSets(pokemonByLetter, 1,
-            new List<string> {firstPokemon}, sizeLimit);
+          var pokeset = new int[sizeLimit];
+          pokeset[0] = firstPokemon.Pokecode;
+
+          FindCompleteSets(pokedex, 1, 2, firstPokemon.Pokecode, pokeset, 1, sizeLimit);
 
           Interlocked.Increment(ref progress);
           Console.WriteLine("... " + progress + "/" + target);
@@ -38,50 +40,36 @@ namespace PokemonChallenge
       Console.ReadKey();
     }
 
-    private static IEnumerable<string> LoadPokedex()
+    private static void FindCompleteSets(Pokedex pokedex, int missingLetter, int pokecodeForMissingLetter, int pokecodeForSet, int[] set, int index, int maxPokemon)
     {
-      var pokedex = new List<string>();
-      dynamic json = JsonConvert.DeserializeObject(File.ReadAllText(@"..\..\..\Pokemon.txt"));
-
-      foreach (var pokemon in json)
-      {
-        pokedex.Add(pokemon.Value);
-      }
-
-      return pokedex;
-    }
-
-    private static void FindCompleteSets(Dictionary<int, List<string>> pokemonByLetter, int missingLetter, List<string> set, int maxPokemon)
-    {
-      if (missingLetter == 26)
+      if (pokecodeForSet == TargetPokecode)
       {
         // Success! This is a set of pokemon covering the whole alphabet
-        Console.WriteLine("{" + string.Join(",", set) + "}");
+        Console.WriteLine(DateTime.Now.Subtract(startTime).TotalMilliseconds);
+        Console.WriteLine(pokedex.GetPokemonDescriptionForSet(set));
+        Console.ReadKey();
         return;
       }
 
-      if (SetContainsLetter(set, missingLetter))
-      {
-        FindCompleteSets(pokemonByLetter, missingLetter + 1, set, maxPokemon);
-        return;
-      }
-
-      if (set.Count >= maxPokemon)
+      if (index >= maxPokemon)
       {
         // Failed! We don't want to look for bigger sets than this
         return;
       }
 
-      foreach (var trialPokemon in pokemonByLetter[missingLetter])
+      while ((pokecodeForSet & pokecodeForMissingLetter) != 0)
       {
-        FindCompleteSets(pokemonByLetter, missingLetter + 1, new List<string>(set) {trialPokemon}, maxPokemon);
+        missingLetter++;
+        pokecodeForMissingLetter <<= 1;
+      }
+
+      int nextIndex = index + 1;
+
+      foreach (var trialPokemon in pokedex.GetPokemonByLetter(missingLetter))
+      {
+        set[index] = trialPokemon.Pokecode;
+        FindCompleteSets(pokedex, missingLetter + 1, pokecodeForMissingLetter << 1, pokecodeForSet | trialPokemon.Pokecode, set, nextIndex, maxPokemon);
       }
     }
-
-    private static bool SetContainsLetter(IEnumerable<string> set, int nextMissingLetter)
-    {
-      return set.Any(pokemon => pokemon.Contains((char)('a' + nextMissingLetter)));
-    }
-
   }
 }
