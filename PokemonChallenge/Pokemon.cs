@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace PokemonChallenge
 {
@@ -8,6 +9,7 @@ namespace PokemonChallenge
     {
       Name = name.ToLowerInvariant();
       Pokecode = CalculatePokecode(Name);
+      ShorterSubsets = new List<Pokemon>();
     }
 
     public string Name { get; private set; }
@@ -30,6 +32,16 @@ namespace PokemonChallenge
       }
 
       return code;
+    }
+
+    public List<Pokemon> ShorterSubsets { get; private set; }
+
+    public void AddShorterSubsetIfApplicable(Pokemon candidate)
+    {
+      if ((candidate.Pokecode | Pokecode) == Pokecode)
+      {
+        ShorterSubsets.Add(candidate);
+      }
     }
 
     public bool ContainsLetterIndex(int letterIndex)

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Constraints;
 
 namespace PokemonChallenge.Tests
 {
@@ -35,5 +36,19 @@ namespace PokemonChallenge.Tests
       Assert.AreEqual(expectedResult, pokemon.ContainsLetterIndex(letterIndex));
     }
 
+    [Test]
+    [TestCase("abc", "b", true)]
+    [TestCase("abc", "d", false)]
+    [TestCase("aaa", "a", true)]
+    [TestCase("a", "aaa", true)]
+    public void AddShorterSubset_AddsCorrectPokemon(string name, string candidate, bool shouldBeAdded)
+    {
+      var originalPokemon = new Pokemon(name);
+      var candidatePokemon = new Pokemon(candidate);
+
+      originalPokemon.AddShorterSubsetIfApplicable(candidatePokemon);
+
+      Assert.AreEqual(shouldBeAdded, originalPokemon.ShorterSubsets.Contains(candidatePokemon));
+    }
   }
 }

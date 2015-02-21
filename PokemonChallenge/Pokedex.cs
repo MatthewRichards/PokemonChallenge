@@ -14,7 +14,15 @@ namespace PokemonChallenge
     public Pokedex(string filename)
     {
       allPokemon = LoadPokedex(filename);
-      pokemonByLetter = GetPokemonByLetter();
+
+      foreach (var pokemon in allPokemon)
+      {
+        allPokemon.Except(new[] {pokemon}).ToList().ForEach(candidate => pokemon.AddShorterSubsetIfApplicable(candidate));
+      }
+
+      var interestingPokemon = allPokemon.Where(
+        pokemon => !allPokemon.Any(biggerPokemon => biggerPokemon.ShorterSubsets.Contains(pokemon)));
+      pokemonByLetter = GetPokemonByLetter(interestingPokemon);
     }
 
     private static List<Pokemon> LoadPokedex(string filename)
@@ -30,10 +38,10 @@ namespace PokemonChallenge
       return pokedex;
     }
 
-    private List<Pokemon>[] GetPokemonByLetter()
+    private List<Pokemon>[] GetPokemonByLetter(IEnumerable<Pokemon> interestingPokemon)
     {
       return Enumerable.Range(0, 25)
-        .Select(index => allPokemon.Where(pokemon => pokemon.ContainsLetterIndex(index)).ToList())
+        .Select(index => interestingPokemon.Where(pokemon => pokemon.ContainsLetterIndex(index)).ToList())
         .ToArray();
     }
 
