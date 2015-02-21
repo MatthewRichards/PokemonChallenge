@@ -12,7 +12,9 @@ namespace PokemonChallenge
   class Program
   {
     private static readonly int TargetPokecode = (int)Math.Pow(2, 26) - 1;
-    private static DateTime startTime = DateTime.Now;
+    private static readonly DateTime StartTime = DateTime.Now;
+    private static int shortestSolution = int.MaxValue;
+    private static List<List<string>> minimalSolutionsSoFar = new List<List<string>>(); 
 
     static void Main()
     {
@@ -34,7 +36,8 @@ namespace PokemonChallenge
           Interlocked.Increment(ref progress);
           Console.WriteLine("... " + progress + "/" + target);
         });
-        Console.WriteLine("Done looking for pokesets with " + maxPokemon + " pokemon");
+        Console.WriteLine("Done looking for pokesets with " + maxPokemon + " pokemon after " +
+                          DateTime.Now.Subtract(StartTime).TotalMilliseconds + "ms");
       }
 
       Console.ReadKey();
@@ -45,9 +48,31 @@ namespace PokemonChallenge
       if (pokecodeForSet == TargetPokecode)
       {
         // Success! This is a set of pokemon covering the whole alphabet
-        Console.WriteLine(DateTime.Now.Subtract(startTime).TotalMilliseconds);
-        Console.WriteLine(pokedex.GetPokemonDescriptionForSet(set));
-        Console.ReadKey();
+        var candidates = pokedex.GetCompletePokesets(set);
+
+        lock (minimalSolutionsSoFar)
+        {
+          foreach (var candidate in candidates)
+          {
+            var length = candidate.Sum(name => name.Length);
+
+            if (length < shortestSolution)
+            {
+              shortestSolution = length;
+              minimalSolutionsSoFar.Clear();
+              minimalSolutionsSoFar.Add(candidate);
+
+              Console.WriteLine("New shortest solution: {" + string.Join(", ", candidate) + "}");
+            }
+            else if (length == shortestSolution)
+            {
+              minimalSolutionsSoFar.Add(candidate);
+
+              Console.WriteLine("Joint shortest solution: {" + string.Join(", ", candidate) + "}");
+            }
+          }
+        }
+
         return;
       }
 

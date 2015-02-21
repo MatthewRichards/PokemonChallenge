@@ -39,7 +39,9 @@ namespace PokemonChallenge.Tests
     [Test]
     [TestCase("abc", "b", true)]
     [TestCase("abc", "d", false)]
-    [TestCase("aaa", "a", true)]
+    [TestCase("ab", "ba", true)]
+    [TestCase("ba", "ab", false)]
+    [TestCase("aaa", "a", false)]
     [TestCase("a", "aaa", true)]
     public void AddShorterSubset_AddsCorrectPokemon(string name, string candidate, bool shouldBeAdded)
     {
