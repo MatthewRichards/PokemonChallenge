@@ -16,6 +16,7 @@ namespace PokemonChallenge
     private static int shortestSolution = int.MaxValue;
     private static readonly List<List<string>> MinimalSolutionsSoFar = new List<List<string>>();
     private static readonly int[] MissingLetterCounts = GetMissingLetterCounts();
+    private static readonly bool[][] ImpossibleSolutionsByLengthByPokecode = new bool[6][];
 
     static void Main()
     {
@@ -26,6 +27,11 @@ namespace PokemonChallenge
         int sizeLimit = maxPokemon;
         var target = pokedex.PokemonByLetter[0].Length;
         var progress = 0;
+
+        for (int i = 0; i < ImpossibleSolutionsByLengthByPokecode.Length; i++)
+        {
+          ImpossibleSolutionsByLengthByPokecode[i] = new bool[TargetPokecode + 1];
+        }
 
         Parallel.ForEach(pokedex.PokemonByLetter[0], firstPokemon =>
         {
@@ -42,19 +48,19 @@ namespace PokemonChallenge
       }
     }
 
-    private static void FindCompleteSets(Pokedex pokedex, int missingLetter, int pokecodeForMissingLetter, int pokecodeForSet, int lengthOfSet, int[] set, int index, int maxPokemon)
+    private static bool FindCompleteSets(Pokedex pokedex, int missingLetter, int pokecodeForMissingLetter, int pokecodeForSet, int lengthOfSet, int[] set, int index, int maxPokemon)
     {
       if (pokecodeForSet == TargetPokecode)
       {
         // Success! This is a set of pokemon covering the whole alphabet
         ExtractSolutions(pokedex, set);
-        return;
+        return true;
       }
 
-      if (index >= maxPokemon)
+      if (index >= maxPokemon || ImpossibleSolutionsByLengthByPokecode[index][pokecodeForSet])
       {
         // Failed! We don't want to look for bigger sets than this
-        return;
+        return false;
       }
 
       var missingLetterCount = MissingLetterCounts[pokecodeForSet];
@@ -62,7 +68,7 @@ namespace PokemonChallenge
       if (lengthOfSet + missingLetterCount > shortestSolution)
       {
         // There's no way we can get a solution without ending up with a non-shortest solution
-        return;
+        return false;
       }
 
       while ((pokecodeForSet & pokecodeForMissingLetter) != 0)
@@ -75,15 +81,23 @@ namespace PokemonChallenge
 
       Pokemon[] pokemonContainingMissingLetter = pokedex.PokemonByLetter[missingLetter];
       int numberOfTrials = pokemonContainingMissingLetter.Length;
+      bool result = false;
 
       for (int i = 0; i < numberOfTrials; i++)
       {
         var trialPokemon = pokemonContainingMissingLetter[i];
         set[index] = trialPokemon.Pokecode;
-        FindCompleteSets(pokedex, missingLetter + 1, pokecodeForMissingLetter << 1,
+        result |= FindCompleteSets(pokedex, missingLetter + 1, pokecodeForMissingLetter << 1,
           pokecodeForSet | trialPokemon.Pokecode, lengthOfSet + trialPokemon.LowestPossibleLength, 
           set, nextIndex, maxPokemon);
       }
+
+      if (!result)
+      {
+        ImpossibleSolutionsByLengthByPokecode[index][pokecodeForSet] = true;
+      }
+
+      return result;
     }
 
     private static int[] GetMissingLetterCounts()
