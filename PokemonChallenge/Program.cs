@@ -124,9 +124,9 @@ namespace PokemonChallenge
 
     private static void ExtractSolutions(Pokedex pokedex, int[] set, int lengthOfSet)
     {
-      if (lengthOfSet <= shortestSolution)
+      lock (MinimalSolutionsSoFar)
       {
-        lock (MinimalSolutionsSoFar)
+        if (lengthOfSet <= shortestSolution)
         {
           var candidate = string.Join(", ", pokedex.GetPokemonInSet(set));
           string description;
