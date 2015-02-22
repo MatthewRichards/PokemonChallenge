@@ -15,15 +15,10 @@ namespace PokemonChallenge
     private static readonly DateTime StartTime = DateTime.Now;
     private static int shortestSolution = int.MaxValue;
     private static readonly List<List<string>> MinimalSolutionsSoFar = new List<List<string>>();
-    private static readonly int[] MissingLetterCounts = new int[TargetPokecode + 1];
+    private static readonly int[] MissingLetterCounts = GetMissingLetterCounts();
 
     static void Main()
     {
-      for (int i = 0; i <= TargetPokecode; i++)
-      {
-        MissingLetterCounts[i] = GetMissingLetterCount(i);
-      }
-
       var pokedex = new Pokedex(@"..\..\..\Pokemon.txt");
 
       for (int maxPokemon = 2; maxPokemon <= 5; maxPokemon++)
@@ -83,16 +78,22 @@ namespace PokemonChallenge
       }
     }
 
+    private static int[] GetMissingLetterCounts()
+    {
+      var missingLetterCounts = new int[TargetPokecode + 1];
+      missingLetterCounts[0] = 26;
+
+      for (int i = 1; i <= TargetPokecode; i++)
+      {
+        missingLetterCounts[i] = missingLetterCounts[i >> 1] - (i & 1);
+      }
+
+      return missingLetterCounts;
+    }
+
     public static int GetMissingLetterCount(int pokecodeForSet)
     {
-      int missingLetterCount = 26;
-      int workingPokecode = pokecodeForSet;
-      while (workingPokecode > 0)
-      {
-        if ((workingPokecode & 1) == 1) missingLetterCount--;
-        workingPokecode >>= 1;
-      }
-      return missingLetterCount;
+      return MissingLetterCounts[pokecodeForSet];
     }
 
     private static void ExtractSolutions(Pokedex pokedex, int[] set)
