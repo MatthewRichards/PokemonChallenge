@@ -13,7 +13,7 @@ namespace PokemonChallenge
   {
     private const int TargetPokecode = 67108863; //(int)Math.Pow(2, 26) - 1;
     private static int shortestSolution = int.MaxValue;
-    private static readonly List<List<string>> MinimalSolutionsSoFar = new List<List<string>>();
+    private static readonly List<string> MinimalSolutionsSoFar = new List<string>();
     private static readonly int[] MissingLetterCounts = GetMissingLetterCounts();
     private static bool[][] impossibleSolutionsByLengthByPokecode;
 
@@ -40,7 +40,7 @@ namespace PokemonChallenge
           var pokeset = new int[sizeLimit];
           pokeset[0] = firstPokemon.Pokecode;
 
-          FindCompleteSets(pokedex, 1, 2, firstPokemon.Pokecode, firstPokemon.LowestPossibleLength, pokeset, 1, sizeLimit);
+          FindCompleteSets(pokedex, 1, 2, firstPokemon.Pokecode, firstPokemon.Length, pokeset, 1, sizeLimit);
         });
         Console.WriteLine("Done looking for pokesets with " + maxPokemon + " pokemon after " +
                           DateTime.Now.Subtract(startTime).TotalMilliseconds + "ms");
@@ -52,7 +52,7 @@ namespace PokemonChallenge
       if (pokecodeForSet == TargetPokecode)
       {
         // Success! This is a set of pokemon covering the whole alphabet
-        ExtractSolutions(pokedex, set);
+        ExtractSolutions(pokedex, set, lengthOfSet);
         return true;
       }
 
@@ -87,7 +87,7 @@ namespace PokemonChallenge
         var trialPokemon = pokemonContainingMissingLetter[i];
         set[index] = trialPokemon.Pokecode;
         result |= FindCompleteSets(pokedex, missingLetter + 1, pokecodeForMissingLetter << 1,
-          pokecodeForSet | trialPokemon.Pokecode, lengthOfSet + trialPokemon.LowestPossibleLength, 
+          pokecodeForSet | trialPokemon.Pokecode, lengthOfSet + trialPokemon.Length, 
           set, nextIndex, maxPokemon);
       }
 
@@ -117,30 +117,33 @@ namespace PokemonChallenge
       return MissingLetterCounts[pokecodeForSet];
     }
 
-    private static void ExtractSolutions(Pokedex pokedex, int[] set)
+    private static void ExtractSolutions(Pokedex pokedex, int[] set, int lengthOfSet)
     {
-      var candidates = pokedex.GetCompletePokesets(set);
-
-      lock (MinimalSolutionsSoFar)
+      if (lengthOfSet <= shortestSolution)
       {
-        foreach (var candidate in candidates)
+        lock (MinimalSolutionsSoFar)
         {
-          var length = candidate.Sum(name => name.Length);
+          var candidate = string.Join(", ", pokedex.GetPokemonInSet(set));
+          string description;
 
-          if (length < shortestSolution)
+          if (lengthOfSet < shortestSolution)
           {
-            shortestSolution = length;
+            shortestSolution = lengthOfSet;
             MinimalSolutionsSoFar.Clear();
-            MinimalSolutionsSoFar.Add(candidate);
-
-            Console.WriteLine("New shortest solution: {" + string.Join(", ", candidate) + "}");
+            description = "New";
           }
-          else if (length == shortestSolution)
+          else if (MinimalSolutionsSoFar.Contains(candidate))
           {
-            MinimalSolutionsSoFar.Add(candidate);
-
-            Console.WriteLine("Joint shortest solution: {" + string.Join(", ", candidate) + "}");
+            return; // Duplicate
           }
+          else
+          {
+            description = "Joint";
+          }
+
+          MinimalSolutionsSoFar.Add(candidate);
+
+          Console.WriteLine(description + " shortest solution: {" + candidate + "}");
         }
       }
     }

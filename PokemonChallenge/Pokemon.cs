@@ -9,23 +9,15 @@ namespace PokemonChallenge
     {
       Name = name.ToLowerInvariant();
       Length = name.Length;
-      LowestPossibleLength = name.Length;
       Pokecode = CalculatePokecode(Name);
-      ShorterSubsets = new List<Pokemon>();
     }
 
     public string Name { get; private set; }
 
     /// <summary>
-    /// This is the length of this Pokemon's name. Don't use this if you might later replace this 
-    /// Pokemon with one of its shorter subsets.
+    /// This is the length of this Pokemon's name.
     /// </summary>
     public int Length { get; private set; }
-
-    /// <summary>
-    /// This is the shortest length of this Pokemon's name or the names of any of its shorter subsets.
-    /// </summary>
-    public int LowestPossibleLength { get; private set; }
 
     /// <summary>
     /// A Pokemon's Pokecode is a 21-bit number indicating the letters that the Pokemon's name contains. 'A' is least significant.
@@ -45,25 +37,6 @@ namespace PokemonChallenge
       }
 
       return code;
-    }
-
-    /// <summary>
-    /// The "shorter subsets" of a Pokemon are those other Pokemon that either contain a proper subset of this Pokemon's 
-    /// letters, or contain exactly the same letters and are greater than this Pokemon based on alphabetical ordering by name.
-    /// We can use this Pokemon in place of all of these shorter subsets, but having found a solution we may find that
-    /// replacing it with one of the shorter subsets is also a valid solution. We will not miss any possible solutions by
-    /// ignoring these shorter subsets initially.
-    /// </summary>
-    public List<Pokemon> ShorterSubsets { get; private set; }
-
-    public void AddShorterSubsetIfApplicable(Pokemon candidate)
-    {
-      if ((candidate.Pokecode == Pokecode && string.CompareOrdinal(candidate.Name, Name) > 0)
-          || (candidate.Pokecode != Pokecode && (candidate.Pokecode | Pokecode) == Pokecode))
-      {
-        ShorterSubsets.Add(candidate);
-        LowestPossibleLength = Math.Min(LowestPossibleLength, candidate.LowestPossibleLength);
-      }
     }
 
     public bool ContainsLetterIndex(int letterIndex)
