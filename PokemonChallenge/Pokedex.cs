@@ -14,9 +14,9 @@ namespace PokemonChallenge
 
     public readonly Pokemon[][] PokemonByLetter;
 
-    public Pokedex(string filename)
+    public Pokedex(string pokemonList)
     {
-      allPokemon = LoadPokedex(filename);
+      allPokemon = LoadPokedex(pokemonList);
 
       foreach (var pokemon in allPokemon)
       {
@@ -48,10 +48,10 @@ namespace PokemonChallenge
       }
     }
 
-    private static List<Pokemon> LoadPokedex(string filename)
+    private static List<Pokemon> LoadPokedex(string pokemonList)
     {
       var pokedex = new List<Pokemon>();
-      dynamic json = JsonConvert.DeserializeObject(File.ReadAllText(filename));
+      dynamic json = JsonConvert.DeserializeObject(pokemonList);
 
       foreach (var pokemon in json)
       {
@@ -77,22 +77,22 @@ namespace PokemonChallenge
     /// <returns></returns>
     public List<List<string>> GetCompletePokesets(int[] set)
     {
-      var candidatesForEachPosition = set.Select(pokecode => pokemonByPokecode[pokecode]).ToArray();
+      var candidatesForEachPosition = set.Select(pokecode => pokemonByPokecode[pokecode].ToArray()).ToArray();
 
       var results = new List<List<string>>();
-      PopulatePokesets(candidatesForEachPosition, 0, 0, new Pokemon[candidatesForEachPosition.Length], results);
+      PopulatePokesets(candidatesForEachPosition, set.Length, 0, new Pokemon[candidatesForEachPosition.Length], results);
       
       return results;
     }
 
     private void PopulatePokesets(
-      List<Pokemon>[] candidatesForEachPosition,
+      Pokemon[][] candidatesForEachPosition,
       int currentPosition,
       int workingPokecode,
       Pokemon[] workingPokeset,
       List<List<string>> results)
     {
-      if (currentPosition == workingPokeset.Length)
+      if (currentPosition == 0)
       {
         if (workingPokecode == TargetPokecode)
         {
@@ -101,13 +101,17 @@ namespace PokemonChallenge
       }
       else
       {
-        foreach (Pokemon candidateForThisPosition in candidatesForEachPosition[currentPosition])
+        // Performance at the expense of clarity... It's slightly preferable to have currentPosition be 1-based rather
+        // than 0-based, hence why we use nextPosition in the array indexing below.
+        var nextPosition = currentPosition - 1;
+
+        foreach (Pokemon candidateForThisPosition in candidatesForEachPosition[nextPosition])
         {
-          workingPokeset[currentPosition] = candidateForThisPosition;
+          workingPokeset[nextPosition] = candidateForThisPosition;
           int newPokecode = workingPokecode | candidateForThisPosition.Pokecode;
 
           PopulatePokesets(candidatesForEachPosition,
-            currentPosition + 1,
+            nextPosition,
             newPokecode,
             workingPokeset,
             results);

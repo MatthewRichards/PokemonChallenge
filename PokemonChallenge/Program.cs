@@ -12,25 +12,27 @@ namespace PokemonChallenge
   public class Program
   {
     private const int TargetPokecode = 67108863; //(int)Math.Pow(2, 26) - 1;
-    private static readonly DateTime StartTime = DateTime.Now;
     private static int shortestSolution = int.MaxValue;
     private static readonly List<List<string>> MinimalSolutionsSoFar = new List<List<string>>();
     private static readonly int[] MissingLetterCounts = GetMissingLetterCounts();
-    private static readonly bool[][] ImpossibleSolutionsByLengthByPokecode = new bool[6][];
+    private static bool[][] impossibleSolutionsByLengthByPokecode;
 
     static void Main()
     {
-      var pokedex = new Pokedex(@"..\..\..\Pokemon.txt");
+      string pokemonList = File.ReadAllText(@"..\..\..\Pokemon.txt");
+
+      var startTime = DateTime.Now;
+
+      var pokedex = new Pokedex(pokemonList);
 
       for (int maxPokemon = 2; maxPokemon <= 5; maxPokemon++)
       {
         int sizeLimit = maxPokemon;
-        var target = pokedex.PokemonByLetter[0].Length;
-        var progress = 0;
 
-        for (int i = 0; i < ImpossibleSolutionsByLengthByPokecode.Length; i++)
+        impossibleSolutionsByLengthByPokecode = new bool[maxPokemon + 1][];
+        for (int i = 0; i <= maxPokemon; i++)
         {
-          ImpossibleSolutionsByLengthByPokecode[i] = new bool[TargetPokecode + 1];
+          impossibleSolutionsByLengthByPokecode[i] = new bool[TargetPokecode + 1];
         }
 
         Parallel.ForEach(pokedex.PokemonByLetter[0], firstPokemon =>
@@ -39,12 +41,9 @@ namespace PokemonChallenge
           pokeset[0] = firstPokemon.Pokecode;
 
           FindCompleteSets(pokedex, 1, 2, firstPokemon.Pokecode, firstPokemon.LowestPossibleLength, pokeset, 1, sizeLimit);
-
-          Interlocked.Increment(ref progress);
-          Console.WriteLine("... " + progress + "/" + target);
         });
         Console.WriteLine("Done looking for pokesets with " + maxPokemon + " pokemon after " +
-                          DateTime.Now.Subtract(StartTime).TotalMilliseconds + "ms");
+                          DateTime.Now.Subtract(startTime).TotalMilliseconds + "ms");
       }
     }
 
@@ -57,7 +56,7 @@ namespace PokemonChallenge
         return true;
       }
 
-      if (index >= maxPokemon || ImpossibleSolutionsByLengthByPokecode[index][pokecodeForSet])
+      if (index >= maxPokemon || impossibleSolutionsByLengthByPokecode[index][pokecodeForSet])
       {
         // Failed! We don't want to look for bigger sets than this
         return false;
@@ -94,7 +93,7 @@ namespace PokemonChallenge
 
       if (!result)
       {
-        ImpossibleSolutionsByLengthByPokecode[index][pokecodeForSet] = true;
+        impossibleSolutionsByLengthByPokecode[index][pokecodeForSet] = true;
       }
 
       return result;
