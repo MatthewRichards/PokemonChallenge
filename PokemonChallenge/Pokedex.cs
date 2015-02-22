@@ -8,8 +8,10 @@ namespace PokemonChallenge
 {
   public class Pokedex
   {
+    private static readonly int TargetPokecode = (int)Math.Pow(2, 26) - 1;
     private readonly List<Pokemon> allPokemon;
-    private readonly List<Pokemon>[] pokemonByLetter; 
+    private readonly List<Pokemon>[] pokemonByLetter;
+    private readonly List<Pokemon>[] pokemonByPokecode = new List<Pokemon>[TargetPokecode + 1]; 
 
     public Pokedex(string filename)
     {
@@ -17,12 +19,31 @@ namespace PokemonChallenge
 
       foreach (var pokemon in allPokemon)
       {
+        AddPokemonByPokecode(pokemon.Pokecode, pokemon);
         allPokemon.Except(new[] {pokemon}).ToList().ForEach(candidate => pokemon.AddShorterSubsetIfApplicable(candidate));
+
+        foreach (var candidate in pokemon.ShorterSubsets)
+        {
+          AddPokemonByPokecode(pokemon.Pokecode, candidate);
+        }
       }
 
       var interestingPokemon = allPokemon.Where(
         pokemon => !allPokemon.Any(biggerPokemon => biggerPokemon.ShorterSubsets.Contains(pokemon)));
       pokemonByLetter = GetPokemonByLetter(interestingPokemon);
+    }
+
+    private void AddPokemonByPokecode(int pokecode, Pokemon pokemon)
+    {
+      if (pokemonByPokecode[pokecode] == null)
+      {
+        pokemonByPokecode[pokecode] = new List<Pokemon>();
+      }
+
+      if (!pokemonByPokecode[pokecode].Contains(pokemon))
+      {
+        pokemonByPokecode[pokecode].Add(pokemon);
+      }
     }
 
     private static List<Pokemon> LoadPokedex(string filename)
@@ -59,52 +80,42 @@ namespace PokemonChallenge
     /// <returns></returns>
     public List<List<string>> GetCompletePokesets(int[] set)
     {
-      var candidatesForEachPosition = set.Select(
-        pokecode =>
-          allPokemon.Where(pokemon => pokemon.Pokecode == pokecode)
-            .SelectMany(pokemon => pokemon.ShorterSubsets.Union(new[] {pokemon}))).ToList();
+      var candidatesForEachPosition = set.Select(pokecode => pokemonByPokecode[pokecode]).ToArray();
 
-      return GetPokesets(candidatesForEachPosition, new List<Pokemon>())
-        .Where(IsCompletePokeset)
-        .Select(pokeset => pokeset.Select(pokemon => pokemon.Name).ToList())
-        .ToList();
+      var results = new List<List<string>>();
+      PopulatePokesets(candidatesForEachPosition, 0, 0, new Pokemon[candidatesForEachPosition.Length], results);
+      
+      return results;
     }
 
-    private IEnumerable<List<Pokemon>> GetPokesets(
-      List<IEnumerable<Pokemon>> candidatesForEachPosition,
-      List<Pokemon> pokesetSoFar)
+    private void PopulatePokesets(
+      List<Pokemon>[] candidatesForEachPosition,
+      int currentPosition,
+      int workingPokecode,
+      Pokemon[] workingPokeset,
+      List<List<string>> results)
     {
-      if (!candidatesForEachPosition.Any())
+      if (currentPosition == workingPokeset.Length)
       {
-        yield return pokesetSoFar;
+        if (workingPokecode == TargetPokecode)
+        {
+          results.Add(workingPokeset.Select(pokemon => pokemon.Name).ToList());
+        }
       }
       else
       {
-        foreach (Pokemon candidateForThisPosition in candidatesForEachPosition.First())
+        foreach (Pokemon candidateForThisPosition in candidatesForEachPosition[currentPosition])
         {
-          foreach (
-            var result in
-              GetPokesets(candidatesForEachPosition.Skip(1).ToList(),
-                new List<Pokemon>(pokesetSoFar) {candidateForThisPosition}))
-          {
-            yield return result;
-          }
+          workingPokeset[currentPosition] = candidateForThisPosition;
+          int newPokecode = workingPokecode | candidateForThisPosition.Pokecode;
+
+          PopulatePokesets(candidatesForEachPosition,
+            currentPosition + 1,
+            newPokecode,
+            workingPokeset,
+            results);
         }
       }
-    }
-
-    private bool IsCompletePokeset(IEnumerable<Pokemon> set)
-    {
-      int setPokecode = set.Aggregate(0, (current, pokemon) => current | pokemon.Pokecode);
-      return setPokecode == (int)Math.Pow(2, 26) - 1;
-    }
-
-    public string GetPokemonDescriptionForSet(int[] set)
-    {
-      return "{" +
-             string.Join(", ",
-               set.Select(pokecode => string.Join(" or ", allPokemon.Where(pokemon => pokemon.Pokecode == pokecode).Select(pokemon => pokemon.Name)))) +
-             "}";
     }
   }
 }
