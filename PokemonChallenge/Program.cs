@@ -25,7 +25,7 @@ namespace PokemonChallenge
 
       var pokedex = new Pokedex(pokemonList);
 
-      for (int maxPokemon = 2; maxPokemon <= 5; maxPokemon++)
+      for (int maxPokemon = 2; MinimalSolutionsSoFar.Count == 0; maxPokemon++)
       {
         int sizeLimit = maxPokemon;
 
@@ -45,6 +45,11 @@ namespace PokemonChallenge
         Console.WriteLine("Done looking for pokesets with " + maxPokemon + " pokemon after " +
                           DateTime.Now.Subtract(startTime).TotalMilliseconds + "ms");
       }
+
+      Console.WriteLine();
+      Console.WriteLine("Solutions found in " + DateTime.Now.Subtract(startTime).TotalMilliseconds + "ms:");
+      MinimalSolutionsSoFar.ForEach(Console.WriteLine);
+      Console.WriteLine();
     }
 
     private static bool FindCompleteSets(Pokedex pokedex, int missingLetter, int pokecodeForMissingLetter, int pokecodeForSet, int lengthOfSet, int[] set, int index, int maxPokemon)

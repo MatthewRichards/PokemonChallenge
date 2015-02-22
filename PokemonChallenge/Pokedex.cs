@@ -9,7 +9,7 @@ namespace PokemonChallenge
   public class Pokedex
   {
     private static readonly int TargetPokecode = (int)Math.Pow(2, 26) - 1;
-    private readonly Pokemon[] pokemonByPokecode = new Pokemon[TargetPokecode + 1];
+    private readonly List<string>[] pokemonByPokecode = new List<string>[TargetPokecode + 1];
 
     public readonly Pokemon[][] PokemonByLetter;
 
@@ -27,16 +27,14 @@ namespace PokemonChallenge
 
     private void AddPokemonByPokecode(int pokecode, Pokemon pokemon)
     {
-      if (pokemonByPokecode[pokecode] != null)
+      if (pokemonByPokecode[pokecode] == null || pokemonByPokecode[pokecode][0].Length > pokemon.Length)
       {
-        if (pokemonByPokecode[pokecode].Length < pokemon.Length)
-        {
-          return;
-        }
-        // qq What about equal length names?
+        pokemonByPokecode[pokecode] = new List<string> {pokemon.Name};
       }
-
-      pokemonByPokecode[pokecode] = pokemon;
+      else
+      {
+        pokemonByPokecode[pokecode].Add(pokemon.Name);
+      }
     }
 
     private static List<Pokemon> LoadPokedex(string pokemonList)
@@ -61,7 +59,7 @@ namespace PokemonChallenge
 
     public IEnumerable<string> GetPokemonInSet(int[] set)
     {
-      return set.Select(pokecode => pokemonByPokecode[pokecode].Name).OrderBy(self => self);
+      return set.Select(pokecode => string.Join(" or ", pokemonByPokecode[pokecode])).OrderBy(self => self);
     }
   }
 }
