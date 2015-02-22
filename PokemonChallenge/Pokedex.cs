@@ -10,8 +10,9 @@ namespace PokemonChallenge
   {
     private static readonly int TargetPokecode = (int)Math.Pow(2, 26) - 1;
     private readonly List<Pokemon> allPokemon;
-    private readonly List<Pokemon>[] pokemonByLetter;
-    private readonly List<Pokemon>[] pokemonByPokecode = new List<Pokemon>[TargetPokecode + 1]; 
+    private readonly List<Pokemon>[] pokemonByPokecode = new List<Pokemon>[TargetPokecode + 1];
+
+    public readonly Pokemon[][] PokemonByLetter;
 
     public Pokedex(string filename)
     {
@@ -30,7 +31,8 @@ namespace PokemonChallenge
 
       var interestingPokemon = allPokemon.Where(
         pokemon => !allPokemon.Any(biggerPokemon => biggerPokemon.ShorterSubsets.Contains(pokemon)));
-      pokemonByLetter = GetPokemonByLetter(interestingPokemon);
+
+      PokemonByLetter = GetPokemonByLetter(interestingPokemon);
     }
 
     private void AddPokemonByPokecode(int pokecode, Pokemon pokemon)
@@ -59,16 +61,11 @@ namespace PokemonChallenge
       return pokedex;
     }
 
-    private List<Pokemon>[] GetPokemonByLetter(IEnumerable<Pokemon> interestingPokemon)
+    private Pokemon[][] GetPokemonByLetter(IEnumerable<Pokemon> interestingPokemon)
     {
       return Enumerable.Range(0, 26)
-        .Select(index => interestingPokemon.Where(pokemon => pokemon.ContainsLetterIndex(index)).ToList())
+        .Select(index => interestingPokemon.Where(pokemon => pokemon.ContainsLetterIndex(index)).ToArray())
         .ToArray();
-    }
-
-    public List<Pokemon> GetPokemonByLetter(int letterIndex)
-    {
-      return pokemonByLetter[letterIndex];
     }
 
     /// <summary>
