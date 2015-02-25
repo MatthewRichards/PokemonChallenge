@@ -9,7 +9,11 @@ namespace PokemonChallenge
     {
       Name = name.ToLowerInvariant();
       Length = name.Length;
-      Pokecode = CalculatePokecode(Name);
+    }
+
+    public void CalculatePokecode(int[] pokecodeMapping)
+    {
+      Pokecode = CalculatePokecode(pokecodeMapping, Name);
     }
 
     public string Name { get; private set; }
@@ -20,11 +24,12 @@ namespace PokemonChallenge
     public int Length { get; private set; }
 
     /// <summary>
-    /// A Pokemon's Pokecode is a 21-bit number indicating the letters that the Pokemon's name contains. 'A' is least significant.
+    /// A Pokemon's Pokecode is a 21-bit number indicating the letters that the Pokemon's name contains.
+    /// The assignment of letters to bit flags is based on the Pokecode Mapping
     /// </summary>
     public int Pokecode { get; private set; }
 
-    private static int CalculatePokecode(string name)
+    private static int CalculatePokecode(int[] pokecodeMapping, string name)
     {
       int code = 0;
 
@@ -32,7 +37,7 @@ namespace PokemonChallenge
       {
         if (letter < 'a' || letter > 'z') continue;
 
-        var codeForThisLetter = (int) Math.Pow(2, letter - 'a');
+        var codeForThisLetter = pokecodeMapping[letter - 'a'];
         code |= codeForThisLetter;
       }
 
