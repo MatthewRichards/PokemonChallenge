@@ -13,7 +13,7 @@ namespace PokemonChallenge
 
     public Pokedex(IEnumerable<string> pokemonList)
     {
-      var allPokemon = pokemonList.Select(pokemon => new Pokemon(pokemon)).ToList(); //.OrderByDescending(pokemon => pokemon.Length).ToList();
+      var allPokemon = pokemonList.Select(pokemon => new Pokemon(pokemon)).OrderByDescending(pokemon => pokemon.Length).ToList();
       var pokecodeMapping = CalculatePokecodeMapping(allPokemon);
       
       foreach (var pokemon in allPokemon)

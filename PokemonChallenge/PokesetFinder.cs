@@ -12,7 +12,7 @@ namespace PokemonChallenge
     private int smallestSolution = int.MaxValue;
     private readonly List<string> minimalSolutionsSoFar = new List<string>();
     private readonly int[] missingLetterCounts = GetMissingLetterCounts();
-    private bool[][] impossibleSolutionsByLengthByPokecode;
+    private int[][] impossibleSolutionsByLengthByPokecode;
 
     public int FindPokesets(IEnumerable<string> pokemonList)
     {
@@ -20,15 +20,17 @@ namespace PokemonChallenge
 
       var pokedex = new Pokedex(pokemonList);
 
-      for (int maxPokemon = 10; minimalSolutionsSoFar.Count == 0; maxPokemon++)
+      // Note: This hard-codes an upper limit to the possible size of the set, which needs improving really
+      const int maxPossibleSetSize = 20;
+      impossibleSolutionsByLengthByPokecode = new int[maxPossibleSetSize + 1][];
+      for (int i = 0; i <= maxPossibleSetSize; i++)
+      {
+        impossibleSolutionsByLengthByPokecode[i] = new int[TargetPokecode + 1];
+      }
+
+      for (int maxPokemon = 1; minimalSolutionsSoFar.Count == 0 && maxPokemon <= maxPossibleSetSize; maxPokemon++)
       {
         int sizeLimit = maxPokemon;
-
-        impossibleSolutionsByLengthByPokecode = new bool[maxPokemon + 1][];
-        for (int i = 0; i <= maxPokemon; i++)
-        {
-          impossibleSolutionsByLengthByPokecode[i] = new bool[TargetPokecode + 1];
-        }
 
         Parallel.ForEach(pokedex.PokemonByLetter[0], firstPokemon =>
         {
@@ -59,7 +61,7 @@ namespace PokemonChallenge
         return true;
       }
 
-      if (index > smallestSolution || index >= maxPokemon || impossibleSolutionsByLengthByPokecode[index][pokecodeForSet])
+      if (index > smallestSolution || index >= maxPokemon || impossibleSolutionsByLengthByPokecode[index][pokecodeForSet] >= maxPokemon)
       {
         // Failed! We don't want to look for bigger sets than this
         return false;
@@ -96,7 +98,7 @@ namespace PokemonChallenge
 
       if (!result)
       {
-        impossibleSolutionsByLengthByPokecode[index][pokecodeForSet] = true;
+        impossibleSolutionsByLengthByPokecode[index][pokecodeForSet] = maxPokemon;
       }
 
       return result;
