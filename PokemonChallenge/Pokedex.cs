@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 
 namespace PokemonChallenge
 {
@@ -13,9 +11,9 @@ namespace PokemonChallenge
 
     public readonly Pokemon[][] PokemonByLetter;
 
-    public Pokedex(string pokemonList)
+    public Pokedex(IEnumerable<string> pokemonList)
     {
-      var allPokemon = LoadPokedex(pokemonList);
+      var allPokemon = pokemonList.Select(pokemon => new Pokemon(pokemon)).ToList(); //.OrderByDescending(pokemon => pokemon.Length).ToList();
       var pokecodeMapping = CalculatePokecodeMapping(allPokemon);
       
       foreach (var pokemon in allPokemon)
@@ -62,19 +60,6 @@ namespace PokemonChallenge
       }
     }
 
-    private static List<Pokemon> LoadPokedex(string pokemonList)
-    {
-      var pokedex = new List<Pokemon>();
-      dynamic json = JsonConvert.DeserializeObject(pokemonList);
-
-      foreach (var pokemon in json)
-      {
-        pokedex.Add(new Pokemon(pokemon.Value));
-      }
-
-      return pokedex;
-    }
-
     private Pokemon[][] GetPokemonByLetter(IEnumerable<Pokemon> interestingPokemon)
     {
       return Enumerable.Range(0, 26)
@@ -82,9 +67,9 @@ namespace PokemonChallenge
         .ToArray();
     }
 
-    public IEnumerable<string> GetPokemonInSet(int[] set)
+    public IEnumerable<string> GetPokemonInSet(int[] set, int numberOfPokemon)
     {
-      return set.Select(pokecode => string.Join(" or ", pokemonByPokecode[pokecode])).OrderBy(self => self);
+      return set.Take(numberOfPokemon).Select(pokecode => string.Join(" or ", pokemonByPokecode[pokecode])).OrderBy(self => self);
     }
   }
 }

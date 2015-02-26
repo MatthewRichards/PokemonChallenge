@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="Pokedex.cs" />
     <Compile Include="Pokemon.cs" />
+    <Compile Include="PokesetFinder.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

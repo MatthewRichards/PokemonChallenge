@@ -13,7 +13,7 @@ namespace PokemonChallenge.Tests
     {
       int pokecode = lettersInSet.Aggregate(0, (soFar, letter) => soFar | (int)Math.Pow(2, letter - 'a'));
 
-      int missingLetters = Program.GetMissingLetterCount(pokecode);
+      int missingLetters = new PokesetFinder().GetMissingLetterCount(pokecode);
 
       Assert.AreEqual(expectedMissingLetters, missingLetters);
     }
