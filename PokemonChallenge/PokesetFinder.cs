@@ -14,9 +14,9 @@ namespace PokemonChallenge
     private readonly int[] missingLetterCounts = GetMissingLetterCounts();
     private bool[][] impossibleSolutionsByLengthByPokecode;
 
-    public void FindPokesets(IEnumerable<string> pokemonList)
+    public int FindPokesets(IEnumerable<string> pokemonList)
     {
-      var startTime = DateTime.Now;
+      var startTime = Environment.TickCount;
 
       var pokedex = new Pokedex(pokemonList);
 
@@ -37,14 +37,17 @@ namespace PokemonChallenge
 
           FindCompleteSets(pokedex, 1, 2, firstPokemon.Pokecode, firstPokemon.Length, pokeset, 1, sizeLimit);
         });
-        Console.WriteLine("Done looking for pokesets with " + maxPokemon + " pokemon after " +
-                          DateTime.Now.Subtract(startTime).TotalMilliseconds + "ms");
       }
 
+      var endTime = Environment.TickCount;
+      var duration = endTime - startTime;
+
       Console.WriteLine();
-      Console.WriteLine("Solutions found in " + DateTime.Now.Subtract(startTime).TotalMilliseconds + "ms:");
+      Console.WriteLine("Solutions found in " + duration + "ms:");
       minimalSolutionsSoFar.ForEach(Console.WriteLine);
       Console.WriteLine();
+
+      return duration;
     }
 
     private bool FindCompleteSets(Pokedex pokedex, int missingLetter, int pokecodeForMissingLetter, int pokecodeForSet, int lengthOfSet, int[] set, int index, int maxPokemon)
