@@ -16,13 +16,16 @@ namespace PokemonChallenge
       string[] pokemonList = ReadPokemon();
       Console.WriteLine("Read Pokemon into string array in " + (Environment.TickCount - startRead) + "ms");
 
-      new PokesetFinder().FindPokesets(new[] {"abcdefghijklmnopqrstuvwxyz"});
-
       GCSettings.LatencyMode = GCLatencyMode.LowLatency;
 
-      int totalTime = 0;
-      int maxTime = 0;
-      const int iterations = 10;
+      new PokesetFinder().FindPokesets(new[] { "abcdefghijklmnopqrstuvwxyz" });
+
+      GC.Collect();
+
+      long totalTime = 0;
+      long maxTime = 0;
+      long minTime = long.MaxValue;
+      const int iterations = 50;
 
       for (int i = 0; i < iterations; i++)
       {
@@ -30,14 +33,14 @@ namespace PokemonChallenge
         var time = new PokesetFinder().FindPokesets(pokemonList);
         totalTime += time;
 
-        if (time > maxTime)
-        {
-          maxTime = time;
-        }
+        if (time > maxTime) maxTime = time;
+        if (time < minTime) minTime = time;
       }
 
+      Console.WriteLine("Iterations: {0}", iterations);
       Console.WriteLine("Max time: {0}ms", maxTime);
-      Console.WriteLine("Average time: {0}ms", totalTime/iterations);
+      Console.WriteLine("Min time: {0}ms", minTime);
+      Console.WriteLine("Average time: {0}ms", totalTime / iterations);
     }
 
     private static string[] ReadPokemon()

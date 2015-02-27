@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -14,9 +15,10 @@ namespace PokemonChallenge
     private readonly int[] missingLetterCounts = GetMissingLetterCounts();
     private int[][] impossibleSolutionsByLengthByPokecode;
 
-    public int FindPokesets(IEnumerable<string> pokemonList)
+    public long FindPokesets(IEnumerable<string> pokemonList)
     {
-      var startTime = Environment.TickCount;
+      var stopwatch = new Stopwatch();
+      stopwatch.Start();
 
       var pokedex = new Pokedex(pokemonList);
 
@@ -41,13 +43,10 @@ namespace PokemonChallenge
         });
       }
 
-      var endTime = Environment.TickCount;
-      var duration = endTime - startTime;
+      stopwatch.Stop();
+      var duration = stopwatch.ElapsedMilliseconds;
 
-      Console.WriteLine();
-      Console.WriteLine("Solutions found in " + duration + "ms:");
-      minimalSolutionsSoFar.ForEach(Console.WriteLine);
-      Console.WriteLine();
+      Console.WriteLine("Solutions found in {0} ms: {1}", duration, string.Join("; ", minimalSolutionsSoFar));
 
       return duration;
     }
