@@ -63,8 +63,8 @@ namespace PokemonChallenge
       Console.WriteLine("Iterations: {0}", iterations);
       Console.WriteLine("Max time: {0}ms", maxTime);
       Console.WriteLine("Min time: {0}ms", minTime);
-      Console.WriteLine("Average time: {0}ms", totalTime/iterations);
-      Console.WriteLine("Reference implementation: {0}ms", referenceTime/iterations);
+      Console.WriteLine("Average time: {0}ms", (double)totalTime/iterations);
+      Console.WriteLine("Reference implementation: {0}ms", (double)referenceTime/iterations);
     }
 
     private static string[] ReadPokemon()
