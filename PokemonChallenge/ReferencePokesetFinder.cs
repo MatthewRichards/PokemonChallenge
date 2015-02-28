@@ -53,19 +53,11 @@ namespace PokemonChallenge
         return true;
       }
 
-      if (index >= maxPokemon || impossibleSolutionsByLengthByPokecode[index][pokecodeForSet])
-      {
-        // Failed! We don't want to look for bigger sets than this
-        return false;
-      }
+      if (index >= maxPokemon) return false; // We're not looking for longer Pokemon yet
 
-      var missingLetterCount = GetMissingLetterCount(pokecodeForSet);
+      if (lengthOfSet + GetMissingLetterCount(pokecodeForSet) > shortestSolution) return false; // We can't possibly complete the problem without too long a solution
 
-      if (lengthOfSet > shortestSolution - missingLetterCount)
-      {
-        // There's no way we can get a solution without ending up with a non-shortest solution
-        return false;
-      }
+      if (impossibleSolutionsByLengthByPokecode[index][pokecodeForSet]) return false; // We've already checked this pokecode
 
       while ((pokecodeForSet & pokecodeForMissingLetter) != 0)
       {
