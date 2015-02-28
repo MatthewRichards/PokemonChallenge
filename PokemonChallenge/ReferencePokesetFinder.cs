@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PokemonChallenge
 {
-  public class PokesetFinder
+  public class ReferencePokesetFinder
   {
     private const int TargetPokecode = 67108863; //(int)Math.Pow(2, 26) - 1;
     private int shortestSolution = int.MaxValue;
@@ -140,6 +140,6 @@ namespace PokemonChallenge
           minimalSolutionsSoFar.Add(candidate);
         }
       }
-    } 
+    }
   }
 }
