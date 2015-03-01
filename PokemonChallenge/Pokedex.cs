@@ -11,10 +11,10 @@ namespace PokemonChallenge
 
     public readonly Pokemon[][] PokemonByLetter;
 
-    public Pokedex(IEnumerable<string> pokemonList)
+    public Pokedex(string[] pokemonList)
     {
       var allPokemon = pokemonList.Select(pokemon => new Pokemon(pokemon)).ToList();
-      var pokecodeMapping = CalculatePokecodeMapping(allPokemon);
+      var pokecodeMapping = CalculatePokecodeMapping(pokemonList);
       
       foreach (var pokemon in allPokemon)
       {
@@ -29,20 +29,31 @@ namespace PokemonChallenge
     /// Calculate the mapping from letters of the alphabet to bit flags.
     /// We want the rarest letters to come first, because this will help us find a solution sooner.
     /// </summary>
-    private int[] CalculatePokecodeMapping(IEnumerable<Pokemon> allPokemon)
+    private int[] CalculatePokecodeMapping(string[] allPokemon)
     {
-      var letterFrequencies =
-        allPokemon.SelectMany(pokemon => pokemon.Name.ToCharArray().Where(letter => letter >= 'a' && letter <= 'z'))
-          .GroupBy(self => self)
-          .OrderBy(group => group.Count());
+      var letterCounts = new int[26];
+
+      foreach (var pokemon in allPokemon)
+      {
+        foreach (var letter in pokemon)
+        {
+          if (letter >= 'a' && letter <= 'z')
+          {
+            letterCounts[letter - 'a']++;
+          }
+        }
+      }
+
+      var letters = new[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25};
+      Array.Sort(letterCounts, letters);
 
       var mapping = new int[26];
       var bitFlag = 1;
 
-      foreach (var letterFrequency in letterFrequencies)
+      foreach (var letter in letters)
       {
-        mapping[letterFrequency.Key - 'a'] = bitFlag;
-        bitFlag *= 2;
+        mapping[letter] = bitFlag;
+        bitFlag <<= 1;
       }
 
       return mapping;

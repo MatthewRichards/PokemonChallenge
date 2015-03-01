@@ -6,16 +6,16 @@ namespace PokemonChallenge
 {
   public class ReferencePokedex
   {
-    private static readonly int TargetPokecode = (int)Math.Pow(2, 26) - 1;
+    private const int TargetPokecode = (1 << 26) - 1;
     private readonly List<string>[] pokemonByPokecode = new List<string>[TargetPokecode + 1];
 
     public readonly Pokemon[][] PokemonByLetter;
 
     public ReferencePokedex(IEnumerable<string> pokemonList)
     {
-      var allPokemon = pokemonList.Select(pokemon => new Pokemon(pokemon)).OrderByDescending(pokemon => pokemon.Length).ToList();
+      var allPokemon = pokemonList.Select(pokemon => new Pokemon(pokemon)).ToList();
       var pokecodeMapping = CalculatePokecodeMapping(allPokemon);
-      
+
       foreach (var pokemon in allPokemon)
       {
         pokemon.CalculatePokecode(pokecodeMapping);
@@ -52,7 +52,7 @@ namespace PokemonChallenge
     {
       if (pokemonByPokecode[pokecode] == null || pokemonByPokecode[pokecode][0].Length > pokemon.Length)
       {
-        pokemonByPokecode[pokecode] = new List<string> {pokemon.Name};
+        pokemonByPokecode[pokecode] = new List<string> { pokemon.Name };
       }
       else
       {

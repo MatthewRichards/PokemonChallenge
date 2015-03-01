@@ -19,7 +19,7 @@ namespace PokemonChallenge
 
       GCSettings.LatencyMode = GCLatencyMode.LowLatency;
 
-      new PokesetFinder().FindPokesets(new[] { "abcdefghijklmnopqrstuvwxyz" });
+      new PokesetFinder().FindPokesets(new[] { "abcdefghijklmnopqrstuvwxy", "z" });
 
       GC.Collect();
 
