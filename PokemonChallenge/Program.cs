@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,7 +42,7 @@ namespace PokemonChallenge
         stopwatch.Stop();
         var duration = stopwatch.ElapsedMilliseconds;
 
-        Console.WriteLine("Solutions found in {0} ms: {1}", duration, string.Join("; ", solutions));
+        Console.WriteLine("Solutions found in {0} ms: {1}", duration, string.Join("; ", solutions.OrderBy(self => self)));
 
         totalTime += duration;
 

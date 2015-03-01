@@ -7,6 +7,7 @@ namespace PokemonChallenge.Reference
   {
     private const int TargetPokecode = (1 << 26) - 1;
     private const int OneShiftedPastPokecode = 1 << 26;
+    private const int TwoShiftedPastPokecode = 2 << 26;
     private int shortestSolution = int.MaxValue;
     private int smallestSolution = int.MaxValue;
     private readonly List<string> minimalSolutionsSoFar = new List<string>();
@@ -26,13 +27,13 @@ namespace PokemonChallenge.Reference
         int numberOfFirstPokemons;
         for (numberOfFirstPokemons = 0; numberOfFirstPokemons < 512; numberOfFirstPokemons++)
         {
-          if (pokedex.PokemonByLetter[numberOfFirstPokemons] == null) break;
+          if (pokedex.PokecodesByLetter[numberOfFirstPokemons] == 0) break;
         }
 
         Parallel.For(0, numberOfFirstPokemons, firstPokemonIndex =>
         {
-          var firstPokemon = pokedex.PokemonByLetter[firstPokemonIndex];
-          int firstLetters = firstPokemon.Pokecode;
+          var firstPokemon = pokedex.PokecodesByLetter[firstPokemonIndex];
+          long firstLetters = firstPokemon & TargetPokecode;
           int secondLetterCode = 2;
           int secondLetter = 1;
 
@@ -46,19 +47,19 @@ namespace PokemonChallenge.Reference
           int numberOfSecondPokemons;
           for (numberOfSecondPokemons = (secondLetter << 9); numberOfSecondPokemons < (secondLetter << 10); numberOfSecondPokemons++)
           {
-            if (pokedex.PokemonByLetter[numberOfSecondPokemons] == null) break;
+            if (pokedex.PokecodesByLetter[numberOfSecondPokemons] == 0) break;
           }
 
           Parallel.For(secondLetter << 9, numberOfSecondPokemons, secondPokemonIndex =>
           {
-            var secondPokemon = pokedex.PokemonByLetter[secondPokemonIndex];
-            var pokeset = new int[sizeLimit];
-            pokeset[0] = firstPokemon.Pokecode;
-            pokeset[1] = secondPokemon.Pokecode;
+            var secondPokemon = pokedex.PokecodesByLetter[secondPokemonIndex];
+            var pokeset = new long[sizeLimit];
+            pokeset[0] = (firstPokemon >> 32) & 0xFFFF;
+            pokeset[1] = (secondPokemon >> 32) & 0xFFFF;
 
             FindCompleteSets(pokedex, secondLetter + 1, secondLetterCode << 1,
-              (firstPokemon.Pokecode | secondPokemon.Pokecode) + OneShiftedPastPokecode + OneShiftedPastPokecode,
-              firstPokemon.Length + secondPokemon.Length, pokeset,
+              ((int)firstPokemon | (int)secondPokemon) + TwoShiftedPastPokecode,
+              (int)((firstPokemon >> 48) + (secondPokemon >> 48)), pokeset,
               2, sizeLimit);
           });
         });
@@ -67,8 +68,8 @@ namespace PokemonChallenge.Reference
       return minimalSolutionsSoFar;
     }
 
-    private bool FindCompleteSets(Pokedex pokedex, int missingLetter, int pokecodeForMissingLetter, int pokecodeForSetWithIndex,
-      int lengthOfSet, int[] set, int index, int maxPokemon)
+    private bool FindCompleteSets(Pokedex pokedex, int missingLetter, int pokecodeForMissingLetter, long pokecodeForSetWithIndex,
+      int lengthOfSet, long[] set, int index, int maxPokemon)
     {
       if ((pokecodeForSetWithIndex & TargetPokecode) == TargetPokecode)
       {
@@ -90,18 +91,21 @@ namespace PokemonChallenge.Reference
       }
 
       int nextIndex = index + 1;
-      int pokecodeForSetWithNextIndex = pokecodeForSetWithIndex + OneShiftedPastPokecode;
+      long pokecodeForSetWithNextIndex = pokecodeForSetWithIndex + OneShiftedPastPokecode;
+      int nextMissingLetter = missingLetter + 1;
+      int pokecodeForNextMissingLetter = pokecodeForMissingLetter << 1;
 
-      Pokemon[] pokemonByLetter = pokedex.PokemonByLetter;
       int trialIndex = missingLetter << 9;
+      var pokemonByLetter = pokedex.PokecodesByLetter;
       bool result = false;
-      var trialPokemon = pokemonByLetter[trialIndex];
 
-      for (int i = trialIndex; trialPokemon != null; trialPokemon = pokemonByLetter[++trialIndex])
+      for (var trialPokemon = pokemonByLetter[trialIndex]; trialPokemon != 0; trialPokemon = pokemonByLetter[++trialIndex])
       {
-        set[index] = trialPokemon.Pokecode;
-        result |= FindCompleteSets(pokedex, missingLetter + 1, pokecodeForMissingLetter << 1,
-          pokecodeForSetWithNextIndex | trialPokemon.Pokecode, lengthOfSet + trialPokemon.Length,
+        var pokecode = (int)trialPokemon;
+        var length = (int)(trialPokemon >> 48);
+        set[index] = (trialPokemon >> 32) & 0xFFFF;
+        result |= FindCompleteSets(pokedex, nextMissingLetter, pokecodeForNextMissingLetter,
+          pokecodeForSetWithNextIndex | pokecode, lengthOfSet + length,
           set, nextIndex, maxPokemon);
       }
 
@@ -113,7 +117,7 @@ namespace PokemonChallenge.Reference
       return result;
     }
 
-    public static int GetMissingLetterCount(int v)
+    public static int GetMissingLetterCount(long v)
     {
       // Invert the relevant bits, so 1 = missing letter
       v = (v ^ TargetPokecode) & TargetPokecode;
@@ -128,7 +132,7 @@ namespace PokemonChallenge.Reference
       return c;
     }
 
-    private void ExtractSolutions(Pokedex pokedex, int[] set, int numberOfPokemon, int lengthOfSet)
+    private void ExtractSolutions(Pokedex pokedex, long[] set, int numberOfPokemon, int lengthOfSet)
     {
       lock (minimalSolutionsSoFar)
       {

@@ -6,34 +6,43 @@ namespace PokemonChallenge.Reference
 {
   public class Pokedex
   {
-    private const int TargetPokecode = (1 << 26) - 1;
-    private readonly List<string>[] pokemonByPokecode = new List<string>[TargetPokecode + 1];
+    private readonly string[] allPokemonNames;
 
-    public readonly Pokemon[] PokemonByLetter;
+    /// <summary>
+    /// A list of Pokemon indexed by letter. In more detail:
+    /// * The first 512 slots are the Pokemon containing the "first" letter (as defined by CalculatePokecodeMapping)
+    /// * The next 512 slots are for the second letter, etc.
+    /// * There is therefore a limit of 512 Pokemon per letter of the alphabet - this is hard-coded
+    /// * Each Pokemon is represented as:
+    /// ** Pokecode (lower 32 bits, although only 26 are used)
+    /// ** Pokemon ID (next 16 bits)
+    /// ** Length (top 16 bits)
+    /// </summary>
+    public readonly long[] PokecodesByLetter;
 
     public Pokedex(string[] pokemonList)
     {
-      var allPokemon = pokemonList.Select(pokemon => new Pokemon(pokemon)).ToArray();
+      allPokemonNames = pokemonList;
       var pokecodeMapping = CalculatePokecodeMapping(pokemonList);
 
-      foreach (var pokemon in allPokemon)
+      var pokecodes = new long[pokemonList.Length];
+      for (long i = 0; i < pokemonList.Length; i++)
       {
-        pokemon.CalculatePokecode(pokecodeMapping);
-        AddPokemonByPokecode(pokemon.Pokecode, pokemon);
+        pokecodes[i] = CalculatePokecode(pokecodeMapping, pokemonList[i], i);
       }
 
-      PokemonByLetter = GetPokemonByLetter(allPokemon);
+      PokecodesByLetter = GetPokecodesByLetter(pokecodes);
     }
 
     /// <summary>
     /// Calculate the mapping from letters of the alphabet to bit flags.
     /// We want the rarest letters to come first, because this will help us find a solution sooner.
     /// </summary>
-    private int[] CalculatePokecodeMapping(string[] allPokemon)
+    private int[] CalculatePokecodeMapping(string[] namesOfPokemon)
     {
       var letterCounts = new int[26];
 
-      foreach (var pokemon in allPokemon)
+      foreach (var pokemon in namesOfPokemon)
       {
         foreach (var letter in pokemon)
         {
@@ -59,40 +68,64 @@ namespace PokemonChallenge.Reference
       return mapping;
     }
 
-    private void AddPokemonByPokecode(int pokecode, Pokemon pokemon)
+    private static long CalculatePokecode(int[] pokecodeMapping, string name, long index)
     {
-      if (pokemonByPokecode[pokecode] == null || pokemonByPokecode[pokecode][0].Length > pokemon.Length)
+      long code = 0;
+
+      foreach (char letter in name)
       {
-        pokemonByPokecode[pokecode] = new List<string> { pokemon.Name };
+        if (letter < 'a' || letter > 'z') continue;
+
+        var codeForThisLetter = pokecodeMapping[letter - 'a'];
+        code |= codeForThisLetter;
       }
-      else
-      {
-        pokemonByPokecode[pokecode].Add(pokemon.Name);
-      }
+
+      code |= (long)name.Length << 48 | index << 32;
+
+      return code;
     }
 
-    private Pokemon[] GetPokemonByLetter(Pokemon[] interestingPokemon)
+    private long[] GetPokecodesByLetter(long[] pokecodeList)
     {
-      var ret = new Pokemon[26 << 9];
+      var ret = new long[26 << 9];
 
-      for (int letter = 0; letter < 26; letter++)
+      for (int letter = 0, letterCode = 1; letter < 26; letter++, letterCode <<= 1)
       {
-        int i = letter << 9;
-        foreach (var pokemon in interestingPokemon)
+        int resultIndex = letter << 9;
+
+        for (long pokemonIndex = 0; pokemonIndex < pokecodeList.Length; pokemonIndex++)
         {
-          if (pokemon.ContainsLetterIndex(letter))
+          var pokecode = pokecodeList[pokemonIndex];
+
+          if ((pokecode & letterCode) != 0)
           {
-            ret[i++] = pokemon;
+            ret[resultIndex++] = pokecode;
           }
+        }
+
+        if (resultIndex >= (letter << 9) + 512)
+        {
+          throw new InvalidOperationException(
+            "More than 512 Pokemon with a single letter - this algorithm can't cope with that!");
         }
       }
 
       return ret;
     }
 
-    public IEnumerable<string> GetPokemonInSet(int[] set, int numberOfPokemon)
+    public string[] GetPokemonInSet(long[] set, int numberOfPokemon)
     {
-      return set.Take(numberOfPokemon).Select(pokecode => string.Join(" or ", pokemonByPokecode[pokecode])).OrderBy(self => self);
+      var sortedSet = (long[])set.Clone();
+      Array.Sort(sortedSet);
+
+      var ret = new string[numberOfPokemon];
+
+      for (int i = 0; i < numberOfPokemon; i++)
+      {
+        ret[i] = allPokemonNames[set[i]];
+      }
+
+      return ret;
     }
   }
 }
