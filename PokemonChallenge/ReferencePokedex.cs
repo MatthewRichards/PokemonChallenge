@@ -2,18 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PokemonChallenge
+namespace PokemonChallenge.Reference
 {
-  public class ReferencePokedex
+  public class Pokedex
   {
     private const int TargetPokecode = (1 << 26) - 1;
     private readonly List<string>[] pokemonByPokecode = new List<string>[TargetPokecode + 1];
 
-    public readonly Pokemon[][] PokemonByLetter;
+    public readonly Pokemon[] PokemonByLetter;
 
-    public ReferencePokedex(string[] pokemonList)
+    public Pokedex(string[] pokemonList)
     {
-      var allPokemon = pokemonList.Select(pokemon => new Pokemon(pokemon)).ToList();
+      var allPokemon = pokemonList.Select(pokemon => new Pokemon(pokemon)).ToArray();
       var pokecodeMapping = CalculatePokecodeMapping(pokemonList);
 
       foreach (var pokemon in allPokemon)
@@ -71,11 +71,23 @@ namespace PokemonChallenge
       }
     }
 
-    private Pokemon[][] GetPokemonByLetter(IEnumerable<Pokemon> interestingPokemon)
+    private Pokemon[] GetPokemonByLetter(Pokemon[] interestingPokemon)
     {
-      return Enumerable.Range(0, 26)
-        .Select(index => interestingPokemon.Where(pokemon => pokemon.ContainsLetterIndex(index)).ToArray())
-        .ToArray();
+      var ret = new Pokemon[26 << 9];
+
+      for (int letter = 0; letter < 26; letter++)
+      {
+        int i = letter << 9;
+        foreach (var pokemon in interestingPokemon)
+        {
+          if (pokemon.ContainsLetterIndex(letter))
+          {
+            ret[i++] = pokemon;
+          }
+        }
+      }
+
+      return ret;
     }
 
     public IEnumerable<string> GetPokemonInSet(int[] set, int numberOfPokemon)

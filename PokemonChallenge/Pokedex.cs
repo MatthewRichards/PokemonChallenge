@@ -9,7 +9,14 @@ namespace PokemonChallenge
     private const int TargetPokecode = (1 << 26) - 1;
     private readonly List<string>[] pokemonByPokecode = new List<string>[TargetPokecode + 1];
 
-    public readonly Pokemon[] PokemonByLetter;
+    /// <summary>
+    /// A list of Pokemon indexed by letter. In more detail:
+    /// * The first 512 slots are the Pokemon containing the "first" letter (as defined by CalculatePokecodeMapping)
+    /// * The next 512 slots are for the second letter, etc.
+    /// * There is therefore a limit of 512 Pokemon per letter of the alphabet - this is hard-coded
+    /// * Each Pokemon is represented as its pokecode (lower 26 bits) and length (remaining bits)
+    /// </summary>
+    public readonly int[] PokemonByLetter;
 
     public Pokedex(string[] pokemonList)
     {
@@ -71,9 +78,9 @@ namespace PokemonChallenge
       }
     }
 
-    private Pokemon[] GetPokemonByLetter(Pokemon[] interestingPokemon)
+    private int[] GetPokemonByLetter(Pokemon[] interestingPokemon)
     {
-      var ret = new Pokemon[26 << 9];
+      var ret = new int[26 << 9];
 
       for (int letter = 0; letter < 26; letter++)
       {
@@ -82,8 +89,14 @@ namespace PokemonChallenge
         {
           if (pokemon.ContainsLetterIndex(letter))
           {
-            ret[i++] = pokemon;
+            ret[i++] = pokemon.Length << 26 | pokemon.Pokecode;
           }
+        }
+
+        if (i >= (letter << 9) + 512)
+        {
+          throw new InvalidOperationException(
+            "More than 512 Pokemon with a single letter - this algorithm can't cope with that!");
         }
       }
 

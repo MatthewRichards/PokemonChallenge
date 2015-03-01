@@ -52,7 +52,7 @@ namespace PokemonChallenge
 
         stopwatch.Restart();
 
-        new ReferencePokesetFinder().FindPokesets(pokemonList);
+        new Reference.PokesetFinder().FindPokesets(pokemonList);
 
         stopwatch.Stop();
         duration = stopwatch.ElapsedMilliseconds;
