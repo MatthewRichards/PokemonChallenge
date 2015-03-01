@@ -23,8 +23,15 @@ namespace PokemonChallenge
         int sizeLimit = maxPokemon;
         impossibleSolutionsByLengthByPokecode = new bool[(sizeLimit << 26) + (TargetPokecode + 1)];
 
-        Parallel.ForEach(pokedex.PokemonByLetter[0], firstPokemon =>
+        int numberOfFirstPokemons;
+        for (numberOfFirstPokemons = 0; numberOfFirstPokemons < 512; numberOfFirstPokemons++)
         {
+          if (pokedex.PokemonByLetter[numberOfFirstPokemons] == null) break;
+        }
+
+        Parallel.For(0, numberOfFirstPokemons, firstPokemonIndex =>
+        {
+          var firstPokemon = pokedex.PokemonByLetter[firstPokemonIndex];
           int firstLetters = firstPokemon.Pokecode;
           int secondLetterCode = 2;
           int secondLetter = 1;
@@ -36,8 +43,15 @@ namespace PokemonChallenge
             secondLetter++;
           }
 
-          Parallel.ForEach(pokedex.PokemonByLetter[secondLetter], secondPokemon =>
+          int numberOfSecondPokemons;
+          for (numberOfSecondPokemons = (secondLetter << 9); numberOfSecondPokemons < (secondLetter << 10); numberOfSecondPokemons++)
           {
+            if (pokedex.PokemonByLetter[numberOfSecondPokemons] == null) break;
+          }
+
+          Parallel.For(secondLetter << 9, numberOfSecondPokemons, secondPokemonIndex =>
+          {
+            var secondPokemon = pokedex.PokemonByLetter[secondPokemonIndex];
             var pokeset = new int[sizeLimit];
             pokeset[0] = firstPokemon.Pokecode;
             pokeset[1] = secondPokemon.Pokecode;
@@ -78,13 +92,13 @@ namespace PokemonChallenge
       int nextIndex = index + 1;
       int pokecodeForSetWithNextIndex = pokecodeForSetWithIndex + OneShiftedPastPokecode;
 
-      Pokemon[] pokemonContainingMissingLetter = pokedex.PokemonByLetter[missingLetter];
-      int numberOfTrials = pokemonContainingMissingLetter.Length;
+      Pokemon[] pokemonByLetter = pokedex.PokemonByLetter;
+      int trialIndex = missingLetter << 9;
       bool result = false;
+      var trialPokemon = pokemonByLetter[trialIndex];
 
-      for (int i = 0; i < numberOfTrials; i++)
+      for (int i = trialIndex; trialPokemon != null; trialPokemon = pokemonByLetter[++trialIndex])
       {
-        var trialPokemon = pokemonContainingMissingLetter[i];
         set[index] = trialPokemon.Pokecode;
         result |= FindCompleteSets(pokedex, missingLetter + 1, pokecodeForMissingLetter << 1,
           pokecodeForSetWithNextIndex | trialPokemon.Pokecode, lengthOfSet + trialPokemon.Length,

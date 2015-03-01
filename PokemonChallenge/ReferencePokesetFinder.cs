@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PokemonChallenge
@@ -15,23 +12,41 @@ namespace PokemonChallenge
     private readonly List<string> minimalSolutionsSoFar = new List<string>();
     private bool[] impossibleSolutionsByLengthByPokecode;
 
-    public List<string> FindPokesets(IEnumerable<string> pokemonList)
+    public List<string> FindPokesets(string[] pokemonList)
     {
       var pokedex = new ReferencePokedex(pokemonList);
 
       const int maxPossibleSetSize = 26;
 
-      for (int maxPokemon = 1; minimalSolutionsSoFar.Count == 0 && maxPokemon <= maxPossibleSetSize; maxPokemon++)
+      for (int maxPokemon = 2; minimalSolutionsSoFar.Count == 0 && maxPokemon <= maxPossibleSetSize; maxPokemon++)
       {
         int sizeLimit = maxPokemon;
         impossibleSolutionsByLengthByPokecode = new bool[(sizeLimit << 26) + (TargetPokecode + 1)];
 
         Parallel.ForEach(pokedex.PokemonByLetter[0], firstPokemon =>
         {
-          var pokeset = new int[sizeLimit];
-          pokeset[0] = firstPokemon.Pokecode;
+          int firstLetters = firstPokemon.Pokecode;
+          int secondLetterCode = 2;
+          int secondLetter = 1;
 
-          FindCompleteSets(pokedex, 1, 2, firstPokemon.Pokecode | OneShiftedPastPokecode, firstPokemon.Length, pokeset, 1, sizeLimit);
+          // Get the next letter we haven't already found
+          while ((firstLetters & secondLetterCode) == secondLetterCode)
+          {
+            secondLetterCode <<= 1;
+            secondLetter++;
+          }
+
+          Parallel.ForEach(pokedex.PokemonByLetter[secondLetter], secondPokemon =>
+          {
+            var ReferencePokeset = new int[sizeLimit];
+            ReferencePokeset[0] = firstPokemon.Pokecode;
+            ReferencePokeset[1] = secondPokemon.Pokecode;
+
+            FindCompleteSets(pokedex, secondLetter + 1, secondLetterCode << 1,
+              (firstPokemon.Pokecode | secondPokemon.Pokecode) + OneShiftedPastPokecode + OneShiftedPastPokecode,
+              firstPokemon.Length + secondPokemon.Length, ReferencePokeset,
+              2, sizeLimit);
+          });
         });
       }
 
