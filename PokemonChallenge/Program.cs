@@ -28,7 +28,7 @@ namespace PokemonChallenge
       long referenceTime = 0;
       long maxTime = 0;
       long minTime = long.MaxValue;
-      const int iterations = 50;
+      const int iterations = 500;
 
       for (int i = 0; i < iterations; i++)
       {
